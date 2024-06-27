@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 // import { set } from 'mongoose';
+import axios from "axios";
 
 export default function DashPosts() {
   const { currentUser } = useSelector((state) => state.user);
@@ -11,14 +12,20 @@ export default function DashPosts() {
   const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [postIdToDelete, setPostIdToDelete] = useState("");
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await fetch(`/api/post/getposts?userId=${currentUser._id}`);
-        const data = await res.json();
-        if (res.ok) {
-          setUserPosts(data.posts);
-          if (data.posts.length < 9) {
+        const res = await axiosInstance.get(
+          `/post/getposts?userId=${currentUser._id}`,
+          {
+            withCredentials: true,
+          }
+        );
+        if (res.status === 200) {
+          setUserPosts(res.data.posts);
+          if (res.data.posts.length < 9) {
             setShowMore(false);
           }
         }
@@ -34,13 +41,15 @@ export default function DashPosts() {
   const handleShowMore = async () => {
     const startIndex = userPosts.length;
     try {
-      const res = await fetch(
-        `/api/post/getposts?userId=${currentUser._id}&startIndex=${startIndex}`
+      const res = await axiosInstance.get(
+        `/post/getposts?userId=${currentUser._id}&startIndex=${startIndex}`,
+        {
+          withCredentials: true,
+        }
       );
-      const data = await res.json();
-      if (res.ok) {
-        setUserPosts((prev) => [...prev, ...data.posts]);
-        if (data.posts.length < 9) {
+      if (res.status === 200) {
+        setUserPosts((prev) => [...prev, ...res.data.posts]);
+        if (res.data.posts.length < 9) {
           setShowMore(false);
         }
       }
@@ -52,15 +61,14 @@ export default function DashPosts() {
   const handleDeletePost = async () => {
     setShowModal(false);
     try {
-      const res = await fetch(
-        `/api/post/deletepost/${postIdToDelete}/${currentUser._id}`,
+      const res = await axiosInstance.delete(
+        `/post/deletepost/${postIdToDelete}/${currentUser._id}`,
         {
-          method: "DELETE",
+          withCredentials: true,
         }
       );
-      const data = await res.json();
-      if (!res.ok) {
-        console.log(data.message);
+      if (res.status === 200) {
+        console.log(res.data.message);
       } else {
         setUserPosts((prev) =>
           prev.filter((post) => post._id !== postIdToDelete)

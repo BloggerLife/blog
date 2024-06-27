@@ -2,6 +2,7 @@ import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import OAuth from "../components/OAuth";
+import axios from "axios";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({});
@@ -11,6 +12,8 @@ export default function SignUp() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.username || !formData.email || !formData.password) {
@@ -19,17 +22,21 @@ export default function SignUp() {
     try {
       setLoading(true);
       setErrorMessage(null);
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (data.success === false) {
-        return setErrorMessage(data.message);
+      const res = await axiosInstance.post(
+        "/auth/signup",
+        {
+          email: formData.email,
+          password: formData.password,
+          username: formData.username,
+        },
+        { withCredentials: true }
+      );
+
+      if (res.status !== 200) {
+        return setErrorMessage(res.data.message);
       }
       setLoading(false);
-      if (res.ok) {
+      if (res.status === 200) {
         navigate("/sign-in");
       }
     } catch (error) {

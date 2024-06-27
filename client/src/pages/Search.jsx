@@ -2,6 +2,7 @@ import { Button, Select, TextInput } from "flowbite-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import PostCard from "../components/PostCard";
+import axios from "axios";
 
 export default function Search() {
   const [sidebarData, setSidebarData] = useState({
@@ -9,8 +10,8 @@ export default function Search() {
     sort: "desc",
     category: "any",
   });
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
 
-  console.log(sidebarData);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -36,13 +37,13 @@ export default function Search() {
     const fetchPosts = async () => {
       setLoading(true);
       const searchQuery = urlParams.toString();
-      const res = await fetch(`/api/post/getposts?${searchQuery}`);
-      if (!res.ok) {
+      const res = await axiosInstance(`/post/getposts?${searchQuery}`);
+      if (res.status !== 200) {
         setLoading(false);
         return;
       }
-      if (res.ok) {
-        const data = await res.json();
+      if (res.status === 200) {
+        const data = res.data;
         setPosts(data.posts);
         setLoading(false);
         if (data.posts.length === 9) {

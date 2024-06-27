@@ -12,13 +12,15 @@ import {
   TwitterIcon,
   FacebookIcon,
 } from "react-share";
+import axios from "axios";
 
 export default function PostPage() {
   const { postSlug } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [post, setPost] = useState(null);
-  const [recentPosts, setRecentPosts] = useState(null);
+  const [post, setPost] = useState();
+  const [recentPosts, setRecentPosts] = useState([]);
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
 
   // Get the URL of the current page dynamically
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
@@ -29,20 +31,18 @@ export default function PostPage() {
       ? post?.title
       : "Check out this awesome content!";
 
-  console.log(post?.title);
-  console.log(window.location.href);
   useEffect(() => {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/post/getposts?slug=${postSlug}`);
-        const data = await res.json();
-        if (!res.ok) {
+        const res = await axiosInstance(`/post/getposts?slug=${postSlug}`);
+        const data = res.data;
+        if (res.status !== 200) {
           setError(true);
           setLoading(false);
           return;
         }
-        if (res.ok) {
+        if (res.status === 200) {
           setPost(data.posts[0]);
           setLoading(false);
           setError(false);
@@ -58,9 +58,9 @@ export default function PostPage() {
   useEffect(() => {
     try {
       const fetchRecentPosts = async () => {
-        const res = await fetch(`/api/post/getposts?limit=3`);
-        const data = await res.json();
-        if (res.ok) {
+        const res = await axiosInstance(`/post/getposts?limit=3`);
+        const data = res.data;
+        if (res.status === 200) {
           setRecentPosts(data.posts);
         }
       };
@@ -121,13 +121,13 @@ export default function PostPage() {
       <div className="max-w-4xl mx-auto w-full">
         <CallToAction />
       </div>
-      <CommentSection postId={post._id} />
+      <CommentSection postId={post?._id} />
 
       <div className="flex flex-col justify-center items-center mb-5">
         <h1 className="text-xl mt-5">Recent articles</h1>
         <div className="flex flex-wrap gap-5 mt-5 justify-center">
           {recentPosts &&
-            recentPosts.map((post) => <PostCard key={post._id} post={post} />)}
+            recentPosts.map((post) => <PostCard key={post?._id} post={post} />)}
         </div>
       </div>
     </main>

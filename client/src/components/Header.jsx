@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../redux/theme/themeSlice";
 import { signoutSuccess } from "../redux/user/userSlice";
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function Header() {
   const path = useLocation().pathname;
@@ -15,6 +16,7 @@ export default function Header() {
   const { currentUser } = useSelector((state) => state.user);
   const { theme } = useSelector((state) => state.theme);
   const [searchTerm, setSearchTerm] = useState("");
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -26,12 +28,9 @@ export default function Header() {
 
   const handleSignout = async () => {
     try {
-      const res = await fetch("/api/user/signout", {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.log(data.message);
+      const res = await axiosInstance.post("/user/signout");
+      if (res.status !== 200) {
+        console.log(res.data.message);
       } else {
         dispatch(signoutSuccess());
       }

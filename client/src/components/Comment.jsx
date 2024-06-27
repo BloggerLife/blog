@@ -1,22 +1,25 @@
+/* eslint-disable react/prop-types */
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { FaThumbsUp } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { Button, Textarea } from "flowbite-react";
 // import { set } from 'mongoose';
+import axios from "axios";
 
 export default function Comment({ comment, onLike, onEdit, onDelete }) {
   const [user, setUser] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const { currentUser } = useSelector((state) => state.user);
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+
   useEffect(() => {
     const getUser = async () => {
       try {
-        const res = await fetch(`/api/user/${comment.userId}`);
-        const data = await res.json();
-        if (res.ok) {
-          setUser(data);
+        const res = await axiosInstance.get(`/user/${comment.userId}`);
+        if (res.status === 200) {
+          setUser(res.data);
         }
       } catch (error) {
         console.log(error.message);
@@ -29,19 +32,16 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
     setIsEditing(true);
     setEditedContent(comment.content);
   };
-
   const handleSave = async () => {
     try {
-      const res = await fetch(`/api/comment/editComment/${comment._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const res = await axiosInstance.put(
+        `/comment/editComment/${comment._id}`,
+        {
           content: editedContent,
-        }),
-      });
-      if (res.ok) {
+        },
+        { withCredentials: true }
+      );
+      if (res.status === 200) {
         setIsEditing(false);
         onEdit(comment, editedContent);
       }

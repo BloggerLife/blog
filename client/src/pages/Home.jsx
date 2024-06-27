@@ -2,18 +2,20 @@ import { Link } from "react-router-dom";
 import CallToAction from "../components/CallToAction";
 import { useEffect, useState } from "react";
 import PostCard from "../components/PostCard";
+import axios from "axios";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const res = await fetch("/api/post/getPosts");
-      const data = await res.json();
-      setPosts(data.posts);
+      const res = await axiosInstance.get("/post/getPosts");
+      setPosts(res.data.posts);
     };
     fetchPosts();
   }, []);
+
   return (
     <div>
       <div className="flex flex-col gap-6 p-28 px-3 max-w-6xl mx-auto ">

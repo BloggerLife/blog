@@ -8,6 +8,7 @@ import {
   signInFailure,
 } from "../redux/user/userSlice";
 import OAuth from "../components/OAuth";
+import axios from "axios";
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
@@ -17,6 +18,8 @@ export default function SignIn() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -24,18 +27,20 @@ export default function SignIn() {
     }
     try {
       dispatch(signInStart());
-      const res = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (data.success === false) {
-        dispatch(signInFailure(data.message));
-      }
+      const res = await axiosInstance.post(
+        "/auth/signin",
+        {
+          email: formData.email,
+          password: formData.password,
+        },
+        { withCredentials: true }
+      );
 
-      if (res.ok) {
-        dispatch(signInSuccess(data));
+      if (res.status !== 200) {
+        dispatch(signInFailure(res.data.message));
+      }
+      if (res.status === 200) {
+        dispatch(signInSuccess(res.data));
         navigate("/");
       }
     } catch (error) {

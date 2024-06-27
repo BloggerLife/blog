@@ -12,6 +12,8 @@ import { useState } from "react";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import axios from "axios";
 
 export default function CreatePost() {
   const [file, setFile] = useState(null);
@@ -19,6 +21,8 @@ export default function CreatePost() {
   const [imageUploadError, setImageUploadError] = useState(null);
   const [formData, setFormData] = useState({});
   const [publishError, setPublishError] = useState(null);
+  const { currentUser } = useSelector((state) => state.user);
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
 
   const navigate = useNavigate();
 
@@ -61,27 +65,30 @@ export default function CreatePost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/post/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await axiosInstance.post(
+        "/post/create",
+        {
+          content: formData.content,
+          image: formData.image,
+          title: formData.title,
+          category: formData.category,
+          userId: currentUser._id,
         },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setPublishError(data.message);
+        { withCredentials: true }
+      );
+      if (res.status !== 201) {
+        setPublishError(res.data.message);
         return;
       }
-
-      if (res.ok) {
+      if (res.status === 201) {
         setPublishError(null);
-        navigate(`/post/${data.slug}`);
+        navigate(`/post/${res.data.slug}`);
       }
     } catch (error) {
       setPublishError("Something went wrong");
     }
   };
+  console.log(formData);
   return (
     <div className="p-3 max-w-3xl mx-auto min-h-screen">
       <h1 className="text-center text-3xl my-7 font-semibold">Create a post</h1>

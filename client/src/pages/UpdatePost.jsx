@@ -13,6 +13,7 @@ import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import axios from "axios";
 
 export default function UpdatePost() {
   const [file, setFile] = useState(null);
@@ -21,6 +22,7 @@ export default function UpdatePost() {
   const [formData, setFormData] = useState({});
   const [publishError, setPublishError] = useState(null);
   const { postId } = useParams();
+  const axiosInstance = axios.create({ baseURL: import.meta.env.VITE_API_URL });
 
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.user);
@@ -28,16 +30,16 @@ export default function UpdatePost() {
   useEffect(() => {
     try {
       const fetchPost = async () => {
-        const res = await fetch(`/api/post/getposts?postId=${postId}`);
-        const data = await res.json();
-        if (!res.ok) {
-          console.log(data.message);
-          setPublishError(data.message);
+        const res = await axiosInstance.get(`/post/getposts?postId=${postId}`);
+        console.log(res);
+        if (res.status !== 200) {
+          console.log(res.data.message);
+          setPublishError(res.data.message);
           return;
         }
-        if (res.ok) {
+        if (res.status === 200) {
           setPublishError(null);
-          setFormData(data.posts[0]);
+          setFormData(res.data.posts[0]);
         }
       };
 
@@ -83,28 +85,29 @@ export default function UpdatePost() {
       console.log(error);
     }
   };
+  console.log(formData._id);
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(
-        `/api/post/updatepost/${formData._id}/${currentUser._id}`,
+      const res = await axiosInstance.put(
+        `/post/updatepost/${formData._id}/${currentUser._id}`,
         {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
+          content: formData.content,
+          image: formData.image,
+          title: formData.title,
+          category: formData.category,
+          userId: currentUser._id,
+        },
+        { withCredentials: true }
       );
-      const data = await res.json();
-      if (!res.ok) {
-        setPublishError(data.message);
+      if (res.status !== 200) {
+        setPublishError(res.data.message);
         return;
       }
 
-      if (res.ok) {
+      if (res.status === 200) {
         setPublishError(null);
-        navigate(`/post/${data.slug}`);
+        navigate(`/post/${res.data.slug}`);
       }
     } catch (error) {
       setPublishError("Something went wrong");
